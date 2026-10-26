@@ -687,15 +687,29 @@ a { color: inherit; text-decoration: none; }
     margin-bottom: 0.35rem;
 }
 
-.category-track {
+.category-bar {
+    display: block;
+    width: 100%;
     height: 8px;
-    background: var(--paper-warm);
+    border: 0;
     border-radius: var(--radius-sm);
     overflow: hidden;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--paper-warm);
+    color: var(--accent);
 }
 
-.category-fill {
-    height: 100%;
+.category-bar::-webkit-progress-bar {
+    background: var(--paper-warm);
+}
+
+.category-bar::-webkit-progress-value {
+    background: var(--accent);
+    border-radius: var(--radius-sm);
+}
+
+.category-bar::-moz-progress-bar {
     background: var(--accent);
     border-radius: var(--radius-sm);
 }

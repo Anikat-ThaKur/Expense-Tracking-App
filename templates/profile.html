@@ -10,26 +10,26 @@
         <div>
             <h1 class="profile-name">{{ user['name'] }}</h1>
             <p class="profile-email">{{ user['email'] }}</p>
-            {% if member_since %}<p class="profile-meta">Member since {{ member_since }}</p>{% endif %}
+            {% if user['member_since'] %}<p class="profile-meta">Member since {{ user['member_since'] }}</p>{% endif %}
         </div>
     </div>
 
     <div class="profile-stats">
         <div class="stat-card">
             <span class="stat-label">Total spent</span>
-            <span class="stat-value">{{ '%.2f'|format(total) }}</span>
+            <span class="stat-value">₹{{ '%.2f'|format(stats['total_spent']) }}</span>
         </div>
         <div class="stat-card">
             <span class="stat-label">Expenses</span>
-            <span class="stat-value">{{ count }}</span>
+            <span class="stat-value">{{ stats['transaction_count'] }}</span>
         </div>
         <div class="stat-card">
             <span class="stat-label">Top category</span>
-            <span class="stat-value">{{ top_category or '—' }}</span>
+            <span class="stat-value">{{ stats['top_category'] }}</span>
         </div>
     </div>
 
-    {% if count == 0 %}
+    {% if stats['transaction_count'] == 0 %}
     <div class="profile-card profile-empty">
         <h2 class="profile-card-title">No expenses yet</h2>
         <p>Once you add some expenses, your spending breakdown will show up here.</p>
@@ -40,12 +40,10 @@
         {% for c in breakdown %}
         <div class="category-row">
             <div class="category-head">
-                <span>{{ c['category'] }}</span>
-                <span>{{ '%.2f'|format(c['total']) }}</span>
+                <span>{{ c['name'] }}</span>
+                <span>₹{{ '%.2f'|format(c['amount']) }} · {{ c['pct'] }}%</span>
             </div>
-            <div class="category-track">
-                <div class="category-fill" style="width: {{ c['pct'] }}%"></div>
-            </div>
+            <progress class="category-bar" value="{{ c['pct'] }}" max="100"></progress>
         </div>
         {% endfor %}
     </div>
@@ -58,7 +56,7 @@
                 <span class="expense-date">{{ e['date'] }}</span>
                 <span class="expense-desc">{{ e['description'] or '—' }}</span>
                 <span class="category-pill">{{ e['category'] }}</span>
-                <span class="expense-amount">{{ '%.2f'|format(e['amount']) }}</span>
+                <span class="expense-amount">₹{{ '%.2f'|format(e['amount']) }}</span>
             </li>
             {% endfor %}
         </ul>
