@@ -1,11 +1,16 @@
 import os
 import sqlite3
-from datetime import datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_category_breakdown,
+    get_recent_transactions,
+    get_summary_stats,
+    get_user_by_id,
+)
 
 app = Flask(__name__)
 # The fallback is for local development only; set SECRET_KEY in any real deployment.
@@ -124,58 +129,17 @@ def profile():
     if not user_id:
         return redirect(url_for("login"))
 
-    conn = get_db()
-    try:
-        user = conn.execute(
-            "SELECT name, email, created_at FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-        if user is None:
-            session.clear()
-            return redirect(url_for("login"))
-
-        stats = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
-            "FROM expenses WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()
-        categories = conn.execute(
-            "SELECT category, SUM(amount) AS total FROM expenses "
-            "WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,),
-        ).fetchall()
-        recent = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
-            (user_id,),
-        ).fetchall()
-    finally:
-        conn.close()
-
-    total = stats["total"]
-    breakdown = [
-        {
-            "category": c["category"],
-            "total": c["total"],
-            "pct": round(c["total"] / total * 100, 1) if total else 0,
-        }
-        for c in categories
-    ]
-
-    try:
-        member_since = datetime.strptime(user["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y")
-    except (TypeError, ValueError):
-        member_since = None
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
 
     return render_template(
         "profile.html",
         user=user,
-        total=total,
-        count=stats["count"],
-        top_category=breakdown[0]["category"] if breakdown else None,
-        breakdown=breakdown,
-        recent=recent,
-        member_since=member_since,
+        stats=get_summary_stats(user_id),
+        breakdown=get_category_breakdown(user_id),
+        recent=get_recent_transactions(user_id),
     )
 
 
