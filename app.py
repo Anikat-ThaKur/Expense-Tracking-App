@@ -1,9 +1,23 @@
 import os
 import sqlite3
+from datetime import date
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from database.date_ranges import (
+    active_preset_key,
+    filter_presets,
+    resolve_date_range,
+)
 from database.db import get_db, init_db, seed_db
 from database.queries import (
     get_category_breakdown,
@@ -134,12 +148,25 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    date_from, date_to, error = resolve_date_range(
+        request.args.get("date_from", "").strip(),
+        request.args.get("date_to", "").strip(),
+    )
+    if error:
+        flash(error)
+
+    presets = filter_presets(date.today())
+
     return render_template(
         "profile.html",
         user=user,
-        stats=get_summary_stats(user_id),
-        breakdown=get_category_breakdown(user_id),
-        recent=get_recent_transactions(user_id),
+        stats=get_summary_stats(user_id, date_from=date_from, date_to=date_to),
+        breakdown=get_category_breakdown(user_id, date_from=date_from, date_to=date_to),
+        recent=get_recent_transactions(user_id, date_from=date_from, date_to=date_to),
+        presets=presets,
+        active_preset=active_preset_key(presets, date_from, date_to),
+        date_from=date_from,
+        date_to=date_to,
     )
 
 

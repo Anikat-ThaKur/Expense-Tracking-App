@@ -14,6 +14,28 @@
         </div>
     </div>
 
+    {% for message in get_flashed_messages() %}
+    <p class="auth-error" role="alert">{{ message }}</p>
+    {% endfor %}
+
+    <div class="filter-bar profile-card">
+        <div class="filter-presets">
+            {% for p in presets %}
+            <a class="filter-preset{% if active_preset == p['key'] %} active{% endif %}"
+               href="{{ url_for('profile', date_from=p['date_from'], date_to=p['date_to']) }}">{{ p['label'] }}</a>
+            {% endfor %}
+        </div>
+        <form class="filter-form" method="get" action="{{ url_for('profile') }}">
+            <label class="filter-field">From
+                <input class="form-input" type="date" name="date_from" value="{{ date_from or '' }}" required>
+            </label>
+            <label class="filter-field">To
+                <input class="form-input" type="date" name="date_to" value="{{ date_to or '' }}" required>
+            </label>
+            <button class="btn-submit filter-apply{% if active_preset is none %} active{% endif %}" type="submit">Apply</button>
+        </form>
+    </div>
+
     <div class="profile-stats">
         <div class="stat-card">
             <span class="stat-label">Total spent</span>
@@ -31,8 +53,13 @@
 
     {% if stats['transaction_count'] == 0 %}
     <div class="profile-card profile-empty">
+        {% if date_from %}
+        <h2 class="profile-card-title">No expenses in this range</h2>
+        <p>Try a different date range or choose All Time.</p>
+        {% else %}
         <h2 class="profile-card-title">No expenses yet</h2>
         <p>Once you add some expenses, your spending breakdown will show up here.</p>
+        {% endif %}
     </div>
     {% else %}
     <div class="profile-card">

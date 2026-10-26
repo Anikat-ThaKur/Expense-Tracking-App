@@ -92,7 +92,9 @@ def test_profile_authenticated(client):
     assert "Demo User" in html and "demo@spendly.com" in html
     assert "₹381.64" in html
     assert "Bills" in html
-    assert html.index("2026-10-18") < html.index("2026-10-01")
+    # The filter bar also contains dates, so only look at the expense list.
+    expense_list = html[html.index('class="expense-list"'):]
+    assert expense_list.index("2026-10-18") < expense_list.index("2026-10-01")
     assert html.count('class="category-bar"') == 6
 
 
