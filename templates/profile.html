@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Profile – Spendly{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+
+    <div class="profile-header">
+        <div class="profile-avatar">{{ user['name'][:1]|upper }}</div>
+        <div>
+            <h1 class="profile-name">{{ user['name'] }}</h1>
+            <p class="profile-email">{{ user['email'] }}</p>
+            {% if member_since %}<p class="profile-meta">Member since {{ member_since }}</p>{% endif %}
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <span class="stat-label">Total spent</span>
+            <span class="stat-value">{{ '%.2f'|format(total) }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Expenses</span>
+            <span class="stat-value">{{ count }}</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-label">Top category</span>
+            <span class="stat-value">{{ top_category or '—' }}</span>
+        </div>
+    </div>
+
+    {% if count == 0 %}
+    <div class="profile-card profile-empty">
+        <h2 class="profile-card-title">No expenses yet</h2>
+        <p>Once you add some expenses, your spending breakdown will show up here.</p>
+    </div>
+    {% else %}
+    <div class="profile-card">
+        <h2 class="profile-card-title">Spending by category</h2>
+        {% for c in breakdown %}
+        <div class="category-row">
+            <div class="category-head">
+                <span>{{ c['category'] }}</span>
+                <span>{{ '%.2f'|format(c['total']) }}</span>
+            </div>
+            <div class="category-track">
+                <div class="category-fill" style="width: {{ c['pct'] }}%"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="profile-card">
+        <h2 class="profile-card-title">Recent expenses</h2>
+        <ul class="expense-list">
+            {% for e in recent %}
+            <li class="expense-item">
+                <span class="expense-date">{{ e['date'] }}</span>
+                <span class="expense-desc">{{ e['description'] or '—' }}</span>
+                <span class="category-pill">{{ e['category'] }}</span>
+                <span class="expense-amount">{{ '%.2f'|format(e['amount']) }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+</section>
+{% endblock %}
