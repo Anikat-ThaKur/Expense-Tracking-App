@@ -1,6 +1,7 @@
+import math
 import os
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 
 from flask import (
     Flask,
@@ -18,8 +19,14 @@ from database.date_ranges import (
     filter_presets,
     resolve_date_range,
 )
+from database.constants import (
+    EXPENSE_CATEGORIES,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_EXPENSE_AMOUNT,
+)
 from database.db import get_db, init_db, seed_db
 from database.queries import (
+    create_expense,
     get_category_breakdown,
     get_recent_transactions,
     get_summary_stats,
@@ -29,6 +36,36 @@ from database.queries import (
 app = Flask(__name__)
 # The fallback is for local development only; set SECRET_KEY in any real deployment.
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-secret-key")
+
+
+def _validate_expense_form(form):
+    """Return (values, error): the stripped form input, and a message or None if valid."""
+    values = {
+        "amount": form.get("amount", "").strip(),
+        "category": form.get("category", "").strip(),
+        "description": form.get("description", "").strip(),
+        "date": form.get("date", "").strip(),
+    }
+
+    try:
+        amount = float(values["amount"])
+    except ValueError:
+        amount = None
+    if amount is None or not math.isfinite(amount) or amount <= 0 or amount > MAX_EXPENSE_AMOUNT:
+        return values, f"Amount must be a number greater than 0 and at most {MAX_EXPENSE_AMOUNT:,}."
+
+    if values["category"] not in EXPENSE_CATEGORIES:
+        return values, "Please choose a valid category."
+
+    try:
+        datetime.strptime(values["date"], "%Y-%m-%d")
+    except ValueError:
+        return values, "Please enter a valid date."
+
+    if len(values["description"]) > MAX_DESCRIPTION_LENGTH:
+        return values, f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer."
+
+    return values, None
 
 
 # ------------------------------------------------------------------ #
@@ -183,9 +220,37 @@ def analytics():
 # ------------------------------------------------------------------ #
 
 
-@app.route("/expenses/add")
+@app.route("/expenses/add", methods=["GET", "POST"])
 def add_expense():
-    return "Add expense — coming in Step 7"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            categories=EXPENSE_CATEGORIES,
+            form={"date": date.today().isoformat()},
+        )
+
+    values, error = _validate_expense_form(request.form)
+    if error:
+        return render_template(
+            "add_expense.html",
+            error=error,
+            categories=EXPENSE_CATEGORIES,
+            form=values,
+        ), 400
+
+    create_expense(
+        user_id,
+        amount=round(float(values["amount"]), 2),
+        category=values["category"],
+        description=values["description"] or None,
+        expense_date=values["date"],
+    )
+    flash("Expense added.", "success")
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/edit")
