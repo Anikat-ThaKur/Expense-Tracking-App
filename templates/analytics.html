@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics — Spendly{% endblock %}
+
+{% block content %}
+{# Provisional layout built from existing hero styles; replace with the Figma design once it is readable. #}
+<section class="hero">
+    <div class="hero-badge">
+        <span class="hero-badge-dot"></span>
+        Coming soon
+    </div>
+    <h1 class="hero-title">Analytics is <span class="hero-title-accent">on its way</span></h1>
+    <p class="hero-subtitle">
+        We're building deeper insights into your spending. Check back soon.
+    </p>
+    <div class="hero-actions">
+        <a href="{{ url_for('profile') }}" class="btn-primary">Back to profile</a>
+    </div>
+</section>
+{% endblock %}

@@ -24,6 +24,21 @@ def get_user_by_id(user_id):
     return {"name": row["name"], "email": row["email"], "member_since": member_since}
 
 
+def create_expense(user_id, amount, category, description, expense_date):
+    """Insert an expense for the user and return its new id."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "INSERT INTO expenses (user_id, amount, category, description, date) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, amount, category, description, expense_date),
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
 def _date_filter(date_from, date_to):
     """Return the extra WHERE fragment and its bound params for an optional date range."""
     clause, params = "", []

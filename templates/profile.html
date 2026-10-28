@@ -14,8 +14,12 @@
         </div>
     </div>
 
-    {% for message in get_flashed_messages() %}
-    <p class="auth-error" role="alert">{{ message }}</p>
+    <div class="profile-actions">
+        <a class="btn-primary" href="{{ url_for('add_expense') }}">Add expense</a>
+    </div>
+
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+    <p class="{% if category == 'success' %}flash-success{% else %}auth-error{% endif %}" role="{% if category == 'success' %}status{% else %}alert{% endif %}">{{ message }}</p>
     {% endfor %}
 
     <div class="filter-bar profile-card">
