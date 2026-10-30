@@ -722,7 +722,7 @@ a { color: inherit; text-decoration: none; }
 
 .expense-item {
     display: grid;
-    grid-template-columns: 6.5rem 1fr auto auto auto;
+    grid-template-columns: 6.5rem 1fr auto auto auto auto;
     align-items: center;
     gap: 1rem;
     padding: 0.75rem 0;
@@ -744,6 +744,21 @@ a { color: inherit; text-decoration: none; }
 }
 
 .expense-edit:hover { text-decoration: underline; }
+
+.expense-delete-form { margin: 0; }
+
+.expense-delete {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--danger);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.expense-delete:hover { text-decoration: underline; }
 
 .category-pill {
     background: var(--accent-2-light);
