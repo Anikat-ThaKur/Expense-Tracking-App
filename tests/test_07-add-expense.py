@@ -427,11 +427,6 @@ class TestProfileIntegration:
 # ---------------------------------------------------------------- placeholders unchanged
 
 class TestPlaceholdersUnchanged:
-    def test_edit_placeholder_unchanged(self, auth_client):
-        resp = auth_client.get("/expenses/1/edit")
-        assert resp.status_code == 200
-        assert "Step 8" in resp.get_data(as_text=True), "Edit placeholder should mention Step 8"
-
     def test_delete_placeholder_unchanged(self, auth_client):
         resp = auth_client.get("/expenses/1/delete")
         assert resp.status_code == 200

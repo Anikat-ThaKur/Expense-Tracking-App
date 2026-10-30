@@ -56,7 +56,7 @@ def test_summary_stats_empty(seeded):
 def test_recent_transactions(seeded):
     rows = queries.get_recent_transactions(seeded[0])
     assert len(rows) == 8
-    assert set(rows[0]) == {"date", "description", "category", "amount"}
+    assert set(rows[0]) == {"id", "date", "description", "category", "amount"}
     dates = [r["date"] for r in rows]
     assert dates == sorted(dates, reverse=True)
 

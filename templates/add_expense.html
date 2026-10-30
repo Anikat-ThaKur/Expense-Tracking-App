@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Add expense — Spendly{% endblock %}
+{% block title %}{{ page_title|default('Add expense') }} — Spendly{% endblock %}
 
 {% block content %}
 
@@ -8,8 +8,8 @@
     <div class="auth-container">
 
         <div class="auth-header">
-            <h1 class="auth-title">Add expense</h1>
-            <p class="auth-subtitle">Record what you spent</p>
+            <h1 class="auth-title">{{ page_title|default('Add expense') }}</h1>
+            <p class="auth-subtitle">{{ page_subtitle|default('Record what you spent') }}</p>
         </div>
 
         <div class="auth-card">
@@ -17,7 +17,7 @@
             <div class="auth-error">{{ error }}</div>
             {% endif %}
 
-            <form method="POST" action="{{ url_for('add_expense') }}">
+            <form method="POST" action="{{ form_action|default(url_for('add_expense')) }}">
                 <div class="form-group">
                     <label for="amount">Amount (₹)</label>
                     <input type="number" id="amount" name="amount"
@@ -48,7 +48,7 @@
                            value="{{ form.date or '' }}"
                            required>
                 </div>
-                <button type="submit" class="btn-submit">Add expense</button>
+                <button type="submit" class="btn-submit">{{ submit_label|default('Add expense') }}</button>
             </form>
         </div>
 
