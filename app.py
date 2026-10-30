@@ -28,6 +28,7 @@ from database.constants import (
 from database.db import get_db, init_db, seed_db
 from database.queries import (
     create_expense,
+    delete_expense_by_id,
     get_category_breakdown,
     get_expense_by_id,
     get_recent_transactions,
@@ -54,8 +55,16 @@ def _validate_expense_form(form):
         amount = float(values["amount"])
     except ValueError:
         amount = None
-    if amount is None or not math.isfinite(amount) or amount <= 0 or amount > MAX_EXPENSE_AMOUNT:
-        return values, f"Amount must be a number greater than 0 and at most {MAX_EXPENSE_AMOUNT:,}."
+    if (
+        amount is None
+        or not math.isfinite(amount)
+        or amount <= 0
+        or amount > MAX_EXPENSE_AMOUNT
+    ):
+        return (
+            values,
+            f"Amount must be a number greater than 0 and at most {MAX_EXPENSE_AMOUNT:,}.",
+        )
 
     if values["category"] not in EXPENSE_CATEGORIES:
         return values, "Please choose a valid category."
@@ -66,7 +75,10 @@ def _validate_expense_form(form):
         return values, "Please enter a valid date."
 
     if len(values["description"]) > MAX_DESCRIPTION_LENGTH:
-        return values, f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer."
+        return (
+            values,
+            f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer.",
+        )
 
     return values, None
 
@@ -74,6 +86,7 @@ def _validate_expense_form(form):
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
+
 
 @app.route("/")
 def landing():
@@ -101,7 +114,10 @@ def register():
         error = "Password must be at least 8 characters."
 
     if error:
-        return render_template("register.html", error=error, name=name, email=email), 400
+        return (
+            render_template("register.html", error=error, name=name, email=email),
+            400,
+        )
 
     password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
@@ -113,12 +129,15 @@ def register():
         )
         conn.commit()
     except sqlite3.IntegrityError:
-        return render_template(
-            "register.html",
-            error="An account with that email already exists.",
-            name=name,
-            email=email,
-        ), 400
+        return (
+            render_template(
+                "register.html",
+                error="An account with that email already exists.",
+                name=name,
+                email=email,
+            ),
+            400,
+        )
     finally:
         conn.close()
 
@@ -137,9 +156,12 @@ def login():
     password = request.form.get("password", "")
 
     if not email or not password:
-        return render_template(
-            "login.html", error="Please enter your email and password.", email=email
-        ), 400
+        return (
+            render_template(
+                "login.html", error="Please enter your email and password.", email=email
+            ),
+            400,
+        )
 
     conn = get_db()
     try:
@@ -151,9 +173,12 @@ def login():
         conn.close()
 
     if user is None or not check_password_hash(user["password_hash"], password):
-        return render_template(
-            "login.html", error="Invalid email or password.", email=email
-        ), 401
+        return (
+            render_template(
+                "login.html", error="Invalid email or password.", email=email
+            ),
+            401,
+        )
 
     session.clear()
     session["user_id"] = user["id"]
@@ -239,13 +264,16 @@ def add_expense():
 
     values, error = _validate_expense_form(request.form)
     if error:
-        return render_template(
-            "add_expense.html",
-            error=error,
-            categories=EXPENSE_CATEGORIES,
-            form=values,
-            form_action=url_for("add_expense"),
-        ), 400
+        return (
+            render_template(
+                "add_expense.html",
+                error=error,
+                categories=EXPENSE_CATEGORIES,
+                form=values,
+                form_action=url_for("add_expense"),
+            ),
+            400,
+        )
 
     create_expense(
         user_id,
@@ -290,9 +318,12 @@ def edit_expense(id):
 
     values, error = _validate_expense_form(request.form)
     if error:
-        return render_template(
-            "add_expense.html", error=error, form=values, **edit_context
-        ), 400
+        return (
+            render_template(
+                "add_expense.html", error=error, form=values, **edit_context
+            ),
+            400,
+        )
 
     updated = update_expense(
         user_id,
@@ -309,9 +340,17 @@ def edit_expense(id):
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/delete")
+@app.route("/expenses/<int:id>/delete", methods=["POST"])
 def delete_expense(id):
-    return "Delete expense — coming in Step 9"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    if not delete_expense_by_id(user_id, id):
+        abort(404)
+
+    flash("Expense deleted.", "success")
+    return redirect(url_for("profile"))
 
 
 if __name__ == "__main__":

@@ -17,7 +17,9 @@ def get_user_by_id(user_id):
         return None
 
     try:
-        member_since = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").strftime("%B %Y")
+        member_since = datetime.strptime(
+            row["created_at"], "%Y-%m-%d %H:%M:%S"
+        ).strftime("%B %Y")
     except (TypeError, ValueError):
         member_since = None
 
@@ -69,6 +71,20 @@ def update_expense(user_id, expense_id, amount, category, description, expense_d
         conn.close()
 
 
+def delete_expense_by_id(user_id, expense_id):
+    """Delete the user's expense; return True if a row was removed."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "DELETE FROM expenses WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
 def _date_filter(date_from, date_to):
     """Return the extra WHERE fragment and its bound params for an optional date range."""
     clause, params = "", []
@@ -92,8 +108,9 @@ def get_summary_stats(user_id, date_from=None, date_to=None):
             (user_id, *date_params),
         ).fetchone()
         top = conn.execute(
-            "SELECT category FROM expenses WHERE user_id = ?" + date_sql +
-            " GROUP BY category ORDER BY SUM(amount) DESC, category ASC LIMIT 1",
+            "SELECT category FROM expenses WHERE user_id = ?"
+            + date_sql
+            + " GROUP BY category ORDER BY SUM(amount) DESC, category ASC LIMIT 1",
             (user_id, *date_params),
         ).fetchone()
     finally:
@@ -141,8 +158,7 @@ def get_category_breakdown(user_id, date_from=None, date_to=None):
     try:
         rows = conn.execute(
             "SELECT category, ROUND(SUM(amount), 2) AS total "
-            "FROM expenses WHERE user_id = ?" + date_sql +
-            " GROUP BY category "
+            "FROM expenses WHERE user_id = ?" + date_sql + " GROUP BY category "
             "ORDER BY total DESC, category ASC",
             (user_id, *date_params),
         ).fetchall()
