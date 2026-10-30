@@ -88,6 +88,8 @@
                 <span class="expense-desc">{{ e['description'] or '—' }}</span>
                 <span class="category-pill">{{ e['category'] }}</span>
                 <span class="expense-amount">₹{{ '%.2f'|format(e['amount']) }}</span>
+                <a class="expense-edit" href="{{ url_for('edit_expense', id=e['id']) }}"
+                   aria-label="Edit {{ e['description'] or e['category'] }}">Edit</a>
             </li>
             {% endfor %}
         </ul>

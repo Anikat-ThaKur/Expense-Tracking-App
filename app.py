@@ -5,6 +5,7 @@ from datetime import date, datetime
 
 from flask import (
     Flask,
+    abort,
     flash,
     redirect,
     render_template,
@@ -28,9 +29,11 @@ from database.db import get_db, init_db, seed_db
 from database.queries import (
     create_expense,
     get_category_breakdown,
+    get_expense_by_id,
     get_recent_transactions,
     get_summary_stats,
     get_user_by_id,
+    update_expense,
 )
 
 app = Flask(__name__)
@@ -231,6 +234,7 @@ def add_expense():
             "add_expense.html",
             categories=EXPENSE_CATEGORIES,
             form={"date": date.today().isoformat()},
+            form_action=url_for("add_expense"),
         )
 
     values, error = _validate_expense_form(request.form)
@@ -240,6 +244,7 @@ def add_expense():
             error=error,
             categories=EXPENSE_CATEGORIES,
             form=values,
+            form_action=url_for("add_expense"),
         ), 400
 
     create_expense(
@@ -253,9 +258,55 @@ def add_expense():
     return redirect(url_for("profile"))
 
 
-@app.route("/expenses/<int:id>/edit")
+@app.route("/expenses/<int:id>/edit", methods=["GET", "POST"])
 def edit_expense(id):
-    return "Edit expense — coming in Step 8"
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    expense = get_expense_by_id(user_id, id)
+    if expense is None:
+        abort(404)
+
+    edit_context = {
+        "categories": EXPENSE_CATEGORIES,
+        "form_action": url_for("edit_expense", id=id),
+        "page_title": "Edit expense",
+        "page_subtitle": "Update the details",
+        "submit_label": "Save changes",
+    }
+
+    if request.method == "GET":
+        return render_template(
+            "add_expense.html",
+            form={
+                "amount": f"{expense['amount']:.2f}",
+                "category": expense["category"],
+                "description": expense["description"] or "",
+                "date": expense["date"],
+            },
+            **edit_context,
+        )
+
+    values, error = _validate_expense_form(request.form)
+    if error:
+        return render_template(
+            "add_expense.html", error=error, form=values, **edit_context
+        ), 400
+
+    updated = update_expense(
+        user_id,
+        id,
+        amount=round(float(values["amount"]), 2),
+        category=values["category"],
+        description=values["description"] or None,
+        expense_date=values["date"],
+    )
+    if not updated:
+        abort(404)
+
+    flash("Expense updated.", "success")
+    return redirect(url_for("profile"))
 
 
 @app.route("/expenses/<int:id>/delete")

@@ -39,6 +39,36 @@ def create_expense(user_id, amount, category, description, expense_date):
         conn.close()
 
 
+def get_expense_by_id(user_id, expense_id):
+    """Return the user's expense as a dict, or None if it doesn't exist or isn't theirs."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            "SELECT id, amount, category, description, date FROM expenses "
+            "WHERE id = ? AND user_id = ?",
+            (expense_id, user_id),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    return dict(row) if row else None
+
+
+def update_expense(user_id, expense_id, amount, category, description, expense_date):
+    """Update the user's expense; return True if a row was changed."""
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            "UPDATE expenses SET amount = ?, category = ?, description = ?, date = ? "
+            "WHERE id = ? AND user_id = ?",
+            (amount, category, description, expense_date, expense_id, user_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    finally:
+        conn.close()
+
+
 def _date_filter(date_from, date_to):
     """Return the extra WHERE fragment and its bound params for an optional date range."""
     clause, params = "", []
@@ -85,7 +115,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     conn = get_db()
     try:
         rows = conn.execute(
-            "SELECT date, description, category, amount FROM expenses "
+            "SELECT id, date, description, category, amount FROM expenses "
             "WHERE user_id = ?" + date_sql + " ORDER BY date DESC, id DESC LIMIT ?",
             (user_id, *date_params, limit),
         ).fetchall()
@@ -94,6 +124,7 @@ def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
 
     return [
         {
+            "id": row["id"],
             "date": row["date"],
             "description": row["description"],
             "category": row["category"],
